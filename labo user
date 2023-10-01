@@ -1,0 +1,209 @@
+#!/bin/bash
+
+# Fonction pour récupérer les informations d'un utilisateur
+info_user() {
+    echo "Dernière connexion"
+    echo "Date de changement de mot de passe"
+}
+
+# Fonction pour changer le mot de passe d'un utilisateur
+pass_user() {
+    echo "Le mot de passe est changé et l'utilisateur devra en saisir un nouveau à la prochaine connexion"
+}
+
+# Fonction pour créer un utilisateur unique
+add_user_unique() {
+    echo "L'utilisateur est créé sans conflit"
+}
+
+# Fonction pour créer des utilisateurs en masse
+add_user_batch() {
+    echo "Tous les utilisateurs sauf ceux existants déjà sont créés"
+}
+
+# Fonction pour supprimer un utilisateur
+del_user() {
+    echo "L'utilisateur est supprimé"
+}
+
+# Fonction pour supprimer les données d'un utilisateur
+del_data_user() {
+    echo "Les données de l'utilisateur sont supprimées"
+}
+
+# Boucle automatique pour le menu principal
+while true; do
+    PS3="Action : (1-INFO_User) (2-PASS_User) (3-ADD_User) (4-DEL_User) (5-DELDATA_User) (6-END) "
+    echo "Choisissez une action :"
+    options=("INFO_User" "PASS_User" "ADD_User" "DEL_User" "DELDATA_User" "END")
+    select action in "${options[@]}"; do
+        case $action in
+            "INFO_User")
+                info_user
+                ;;
+            "PASS_User")
+                pass_user
+                ;;
+            "ADD_User")
+                # Sous-menu pour ajouter un utilisateur
+                while true; do
+                    PS3="CHOIX: (1-UNIQUE) (2-PAR_LOT) (3-RETOUR) "
+                    echo "Sous-menu :"
+                    add_options=("UNIQUE" "PAR_LOT" "RETOUR")
+                    select add_action in "${add_options[@]}"; do
+                        case $add_action in
+                            "UNIQUE")
+                                add_user_unique
+                                ;;
+                            "PAR_LOT")
+                                add_user_batch
+                                ;;
+                            "RETOUR")
+                                break
+                                ;;
+                            *)
+                                echo "Choix invalide"
+                                ;;
+                        esac
+                    done
+                done
+                ;;
+            "DEL_User")
+                del_user
+                ;;
+            "DELDATA_User")
+                del_data_user
+                ;;
+            "END")
+                exit 0
+                ;;
+            *)
+                echo "Choix invalide"
+                ;;
+        esac
+    done
+done
+
+#!/bin/bash
+
+# Fonction pour récupérer les informations d'un utilisateur
+info_user() {
+    echo "Dernière connexion"
+    echo "Date de changement de mot de passe"
+}
+
+# Fonction pour changer le mot de passe d'un utilisateur
+pass_user() {
+    echo "Le mot de passe est changé et l'utilisateur devra en saisir un nouveau à la prochaine connexion"
+}
+
+# Fonction pour ajouter un utilisateur unique
+add_user_unique() {
+    read -p "Entrez le nom d'utilisateur à ajouter : " username
+    # Vérifiez si l'utilisateur existe déjà
+    if id "$username" &>/dev/null; then
+        echo "L'utilisateur existe déjà."
+    else
+        # Ajoutez l'utilisateur
+        sudo useradd "$username"
+        echo "L'utilisateur $username a été créé avec succès."
+    fi
+}
+
+# Fonction pour ajouter des utilisateurs en masse
+add_user_batch() {
+    read -p "Entrez le nom du fichier contenant la liste des utilisateurs : " userlist
+    # Vérifiez si le fichier existe
+    if [ -f "$userlist" ]; then
+        # Ajoutez les utilisateurs du fichier
+        sudo cat "$userlist" | while read username; do
+            if id "$username" &>/dev/null; then
+                echo "L'utilisateur $username existe déjà."
+            else
+                sudo useradd "$username"
+                echo "L'utilisateur $username a été créé avec succès."
+            fi
+        done
+    else
+        echo "Le fichier $userlist n'existe pas."
+    fi
+}
+
+# Fonction pour supprimer un utilisateur
+del_user() {
+    read -p "Entrez le nom d'utilisateur à supprimer : " username
+    # Vérifiez si l'utilisateur existe
+    if id "$username" &>/dev/null; then
+        # Supprimez l'utilisateur
+        sudo userdel -r "$username"
+        echo "L'utilisateur $username a été supprimé avec succès."
+    else
+        echo "L'utilisateur $username n'existe pas."
+    fi
+}
+
+# Fonction pour supprimer les données d'un utilisateur
+del_data_user() {
+    read -p "Entrez le nom d'utilisateur dont vous souhaitez supprimer les données : " username
+    # Vérifiez si l'utilisateur existe
+    if id "$username" &>/dev/null; then
+        # Supprimez les données de l'utilisateur (par exemple, supprimez le répertoire personnel)
+        sudo rm -r "/home/$username"
+        echo "Les données de l'utilisateur $username ont été supprimées avec succès."
+    else
+        echo "L'utilisateur $username n'existe pas."
+    fi
+}
+
+# Boucle automatique pour le menu principal
+while true; do
+    PS3="Action : (1-INFO_User) (2-PASS_User) (3-ADD_User) (4-DEL_User) (5-DELDATA_User) (6-END) "
+    echo "Choisissez une action :"
+    options=("INFO_User" "PASS_User" "ADD_User" "DEL_User" "DELDATA_User" "END")
+    select action in "${options[@]}"; do
+        case $action in
+            "INFO_User")
+                info_user
+                ;;
+            "PASS_User")
+                pass_user
+                ;;
+            "ADD_User")
+                # Sous-menu pour ajouter un utilisateur
+                while true; do
+                    PS3="CHOIX: (1-UNIQUE) (2-PAR_LOT) (3-RETOUR) "
+                    echo "Sous-menu :"
+                    add_options=("UNIQUE" "PAR_LOT" "RETOUR")
+                    select add_action in "${add_options[@]}"; do
+                        case $add_action in
+                            "UNIQUE")
+                                add_user_unique
+                                ;;
+                            "PAR_LOT")
+                                add_user_batch
+                                ;;
+                            "RETOUR")
+                                break
+                                ;;
+                            *)
+                                echo "Choix invalide"
+                                ;;
+                        esac
+                    done
+                done
+                ;;
+            "DEL_User")
+                del_user
+                ;;
+            "DELDATA_User")
+                del_data_user
+                ;;
+            "END")
+                exit 0
+                ;;
+            *)
+                echo "Choix invalide"
+                ;;
+        esac
+    done
+done
