@@ -1,0 +1,75 @@
+#!/bin/bash
+
+# Vérifier si l'utilisateur a les privilèges de super utilisateur (root)
+if [ "$EUID" -ne 0 ]; then
+  echo "Ce script doit être exécuté en tant qu'utilisateur super utilisateur (root)."
+  exit 1
+fi
+
+# Fonction pour installer Bind9 (DNS)
+install_dns() {
+    echo "Installation de Bind9..."
+    # Vous pouvez personnaliser cette section pour votre distribution
+    apt-get update
+    apt-get install -y bind9
+    systemctl enable bind9
+    systemctl start bind9
+
+    # Vérification du statut de Bind9
+    if systemctl is-active --quiet bind9; then
+        echo "Bind9 installé et démarré avec succès."
+    else
+        echo "Bind9 n'a pas pu être démarré avec succès."
+    fi
+}
+
+# Fonction pour configurer un certificat Let's Encrypt
+configure_cert() {
+    echo "Configuration du certificat Let's Encrypt..."
+    # Vous devez avoir un serveur web (Apache) installé et configuré pour cela
+    apt-get install -y certbot python3-certbot-apache
+    certbot --apache
+
+    # Vérification de la configuration du certificat
+    if [ $? -eq 0 ]; then
+        echo "Certificat Let's Encrypt configuré avec succès."
+    else
+        echo "La configuration du certificat Let's Encrypt a échoué."
+    fi
+}
+
+# Afficher l'adresse IP de l'hôte
+get_ip_address() {
+    local ip_address
+    ip_address=$(hostname -I | awk '{print $1}')
+    echo "Adresse IP de l'hôte : $ip_address"
+}
+
+# Menu principal
+while true; do
+    echo "Menu principal:"
+    echo "1. Installer et configurer Bind9 (DNS)"
+    echo "2. Configurer un certificat Let's Encrypt"
+    echo "3. Afficher l'adresse IP de l'hôte"
+    echo "4. Quitter"
+    read -p "Choisissez une option (1/2/3/4): " choice
+
+    case $choice in
+        1)
+            install_dns
+            ;;
+        2)
+            configure_cert
+            ;;
+        3)
+            get_ip_address
+            ;;
+        4)
+            echo "Au revoir!"
+            exit 0
+            ;;
+        *)
+            echo "Option invalide. Veuillez choisir une option valide (1/2/3/4)."
+            ;;
+    esac
+done
