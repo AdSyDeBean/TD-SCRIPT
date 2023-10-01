@@ -1,0 +1,49 @@
+#!/bin/bash
+
+# Fonction pour afficher le menu principal
+show_menu() {
+    echo "Menu Docker:"
+    echo "1. Lister les conteneurs en cours d'exécution"
+    echo "2. Créer un nouveau conteneur"
+    echo "3. Démarrer un conteneur"
+    echo "4. Arrêter un conteneur"
+    echo "5. Supprimer un conteneur"
+    echo "6. Quitter"
+}
+
+# Menu principal
+while true; do
+    show_menu
+    read -p "Choisissez une option (1/2/3/4/5/6): " choice
+
+    case $choice in
+        1)
+            echo "Liste des conteneurs en cours d'exécution :"
+            docker ps
+            ;;
+        2)
+            read -p "Nom du nouveau conteneur : " container_name
+            read -p "Nom de l'image Docker : " image_name
+            docker run --name "$container_name" -d "$image_name"
+            ;;
+        3)
+            read -p "Nom du conteneur à démarrer : " container_name
+            docker start "$container_name"
+            ;;
+        4)
+            read -p "Nom du conteneur à arrêter : " container_name
+            docker stop "$container_name"
+            ;;
+        5)
+            read -p "Nom du conteneur à supprimer : " container_name
+            docker rm "$container_name"
+            ;;
+        6)
+            echo "Au revoir!"
+            exit 0
+            ;;
+        *)
+            echo "Option invalide. Veuillez choisir une option valide (1/2/3/4/5/6)."
+            ;;
+    esac
+done
