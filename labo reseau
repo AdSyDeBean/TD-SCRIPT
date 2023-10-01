@@ -1,0 +1,326 @@
+#!/bin/bash
+
+# Fonction pour afficher les informations réseau
+function afficher_informations_reseau() {
+    # Nom des cartes réseau
+    echo "Nom des cartes réseau :"
+    ip -o link show | awk -F': ' '{print $2}' | sed 's/ //g'
+    
+    # Adresses IPv4
+    echo "Adresses IPv4 :"
+    ip -4 addr show | grep 'inet ' | awk '{print $2}'
+    
+    # Adresses IPv6
+    echo "Adresses IPv6 :"
+    ip -6 addr show | grep 'inet6' | awk '{print $2}'
+    
+    # Serveurs DNS
+    echo "Serveurs DNS :"
+    cat /etc/resolv.conf | grep 'nameserver' | awk '{print $2}'
+    
+    # Adresse du serveur DHCP (si disponible)
+    echo "Adresse du serveur DHCP :"
+    cat /var/lib/dhcp/dhclient.*.leases | grep 'dhcp-server-identifier' | tail -n1 | awk '{print $3}'
+    
+    # Adresses MAC de cartes réseau
+    echo "Adresses MAC de cartes réseau :"
+    ip -o link show | awk -F': ' '{print $2, $17}'
+    
+    # Table de routage
+    echo "Table de routage :"
+    ip route show
+}
+
+
+# Fonction pour convertir une adresse IP et un masque en une adresse réseau
+function convertir_ip_en_reseau() {
+    read -p "Entrez l'adresse IP (format xxx.xxx.xxx.xxx) : " ip_address
+    read -p "Entrez le masque (format xxx.xxx.xxx.xxx) : " subnet_mask
+    
+    # Utilisation de la commande 'ipcalc' pour effectuer la conversion
+    network=$(ipcalc -n -b -n "$ip_address/$subnet_mask" | awk -F'=' '/Network/ {print $2}')
+    
+    echo "Votre réseau est le $network"
+}
+
+# Appel de la fonction pour convertir IP en réseau
+convertir_ip_en_reseau
+
+# Tableau pour stocker les adresses réseau
+declare -a addresses=()
+
+# Fonction pour ajouter une adresse réseau
+function ajouter_adresse_reseau() {
+    read -p "Entrez une nouvelle adresse réseau (format xxx.xxx.xxx.xxx) : " new_address
+    # Vérification pour éviter les doublons
+    if [[ ! " ${addresses[*]} " =~ " ${new_address} " ]]; then
+        addresses+=("$new_address")
+        echo "Adresse réseau ajoutée : $new_address"
+    else
+        echo "Cette adresse réseau existe déjà."
+    fi
+}
+
+# Fonction pour supprimer une adresse réseau
+function supprimer_adresse_reseau() {
+    read -p "Entrez l'adresse réseau à supprimer (format xxx.xxx.xxx.xxx) : " delete_address
+    # Vérification si l'adresse existe dans le tableau
+    if [[ " ${addresses[*]} " =~ " ${delete_address} " ]]; then
+        # Suppression de l'adresse réseau
+        addresses=("${addresses[@]/$delete_address}")
+        echo "Adresse réseau supprimée : $delete_address"
+    else
+        echo "Cette adresse réseau n'existe pas dans la liste."
+    fi
+}
+
+# Fonction pour afficher toutes les adresses réseau
+function afficher_adresses_reseau() {
+    echo "Liste des adresses réseau :"
+    for address in "${addresses[@]}"; do
+        echo "$address"
+    done
+}
+
+# Appel de la fonction pour gérer les adresses réseau
+while true; do
+    echo "Options pour la gestion des adresses IP :"
+    echo "1 - Ajouter une adresse réseau"
+    echo "2 - Supprimer une adresse réseau"
+    echo "3 - Afficher toutes les adresses réseau"
+    echo "4 - Quitter"
+    read -p "Choix : " ip_choix
+    case $ip_choix in
+        1)
+            ajouter_adresse_reseau
+            ;;
+        2)
+            supprimer_adresse_reseau
+            ;;
+        3)
+            afficher_adresses_reseau
+            ;;
+        4)
+            break
+            ;;
+        *)
+            echo "Choix invalide."
+            ;;
+    esac
+done
+
+
+# Tableau pour stocker les profils
+declare -a profiles=()
+
+# Fonction pour ajouter un profil
+function ajouter_profil() {
+    read -p "Entrez le nom d'un nouveau profil : " new_profile
+    # Vérification pour éviter les doublons
+    if [[ ! " ${profiles[*]} " =~ " ${new_profile} " ]]; then
+        profiles+=("$new_profile")
+        echo "Profil ajouté : $new_profile"
+    else
+        echo "Ce profil existe déjà."
+    fi
+}
+
+# Fonction pour supprimer un profil
+function supprimer_profil() {
+    read -p "Entrez le nom du profil à supprimer : " delete_profile
+    # Vérification si le profil existe dans le tableau
+    if [[ " ${profiles[*]} " =~ " ${delete_profile} " ]]; then
+        # Suppression du profil
+        profiles=("${profiles[@]/$delete_profile}")
+        echo "Profil supprimé : $delete_profile"
+    else
+        echo "Ce profil n'existe pas dans la liste."
+    fi
+}
+
+# Fonction pour afficher tous les profils
+function afficher_profils() {
+    echo "Liste des profils :"
+    for profile in "${profiles[@]}"; do
+        echo "$profile"
+    done
+}
+
+# Appel de la fonction pour gérer les profils
+while true; do
+    echo "Options pour la gestion des profils :"
+    echo "1 - Ajouter un profil"
+    echo "2 - Supprimer un profil"
+    echo "3 - Afficher tous les profils"
+    echo "4 - Quitter"
+    read -p "Choix : " profile_choice
+    case $profile_choice in
+        1)
+            ajouter_profil
+            ;;
+        2)
+            supprimer_profil
+            ;;
+        3)
+            afficher_profils
+            ;;
+        4)
+            break
+            ;;
+        *)
+            echo "Choix invalide."
+            ;;
+    esac
+done
+
+
+# Fonction pour effectuer un scan d'IP
+function scan_ip() {
+    read -p "Entrez une adresse IP ou une plage d'adresses IP (ex. 192.168.1.1 ou 192.168.1.1-10) : " ip_range
+    nmap -sP $ip_range  # Utilisation de nmap pour le scan
+}
+
+# Appel de la fonction de scan d'IP
+scan_ip
+
+# Fonction pour effectuer un scan HTTP et HTTPS
+function scan_http_https() {
+    read -p "Entrez une adresse IP ou une plage d'adresses IP (ex. 192.168.1.1 ou 192.168.1.1-10) : " ip_range
+    nmap -p 80,443 $ip_range  # Utilisation de nmap pour le scan des ports 80 (HTTP) et 443 (HTTPS)
+}
+
+# Appel de la fonction de scan HTTP et HTTPS
+scan_http_https
+
+
+# Fonction pour effectuer un scan du serveur DHCP
+function scan_dhcp() {
+    echo "Recherche d'un serveur DHCP actif..."
+    sudo dhcping -s $1  # Remplacez $1 par l'adresse IP de votre serveur DHCP
+}
+
+# Appel de la fonction de scan DHCP avec l'adresse IP du serveur DHCP en argument
+scan_dhcp <adresse_IP_du_serveur_DHCP>
+
+
+# Fonction pour effectuer un scan CVE avec Nmap
+function scan_cve() {
+    local target="$1"  # L'adresse IP ou le nom d'hôte de la machine à scanner
+    echo "Scan CVE en cours pour $target..."
+    nmap --script vulners -p- $target  # Utilisation du script vulners de Nmap
+}
+
+# Appel de la fonction de scan CVE en remplaçant <adresse_IP_ou_nom_d_hote> par la cible souhaitée
+scan_cve <adresse_IP_ou_nom_d_hote>
+
+
+# Fonction pour récupérer les informations DNS d'un site distant
+function infos_dns_wan() {
+    local site="$1"  # Le nom de domaine du site distant
+    echo "Récupération des informations DNS pour $site..."
+    dig +short $site  # Utilisation de la commande dig pour obtenir les informations DNS
+}
+
+# Appel de la fonction avec le nom de domaine du site distant en remplaçant <site_distant> par le nom de votre choix
+infos_dns_wan <site_distant>
+
+
+# Fonction pour terminer le script proprement
+function fin() {
+    local message="$1"
+    if [ -n "$message" ]; then
+        echo "$message"
+    fi
+    exit 0  # Terminer le script avec un code de sortie 0 (succès)
+}
+
+# Utilisation de la fonction fin pour terminer le script avec un message
+fin "Fin du script."
+
+
+#!/bin/bash
+
+# Fonction pour afficher les informations réseau
+function afficher_infos_reseau() {
+    echo "Informations réseau :"
+    # Ajoutez ici le code pour afficher les informations réseau
+}
+
+# Fonction pour convertir une adresse IP
+function convertir_ip() {
+    echo "Convertir une adresse IP :"
+    # Ajoutez ici le code pour convertir une adresse IP
+}
+
+# Fonction pour gérer les adresses IP
+function gestion_ip() {
+    echo "Gestion des adresses IP :"
+    # Ajoutez ici le code pour gérer les adresses IP
+}
+
+# Fonction pour gérer les profils
+function gestion_profil() {
+    echo "Gestion des profils :"
+    # Ajoutez ici le code pour gérer les profils
+}
+
+# Fonction pour scanner les adresses IP
+function scanner_ip() {
+    echo "Scanner des adresses IP :"
+    # Ajoutez ici le code pour scanner les adresses IP
+}
+
+# Fonction pour scanner HTTP(s)
+function scanner_http_https() {
+    echo "Scanner HTTP(s) :"
+    # Ajoutez ici le code pour scanner HTTP(s)
+}
+
+# Fonction pour scanner DHCP
+function scanner_dhcp() {
+    echo "Scanner DHCP :"
+    # Ajoutez ici le code pour scanner DHCP
+}
+
+# Fonction pour scanner les CVE
+function scanner_cve() {
+    echo "Scanner les CVE :"
+    # Ajoutez ici le code pour scanner les CVE
+}
+
+# Fonction pour afficher les infos WAN
+function afficher_infos_wan() {
+    echo "Informations WAN :"
+    # Ajoutez ici le code pour afficher les informations WAN
+}
+
+# Fonction pour terminer le script
+function fin() {
+    echo "Fin du script."
+    exit 0
+}
+
+# Menu principal
+PS3="CHOIX : "
+options=("Infos" "Convertir IP" "Gestion des IP" "Gestion Profil" "Scan IP" "Scan HTTP(s)" "Scan DHCP" "Scan CVE" "Infos WAN" "FIN")
+
+select choix in "${options[@]}"
+do
+    case $REPLY in
+        1) afficher_infos_reseau;;
+        2) convertir_ip;;
+        3) gestion_ip;;
+        4) gestion_profil;;
+        5) scanner_ip;;
+        6) scanner_http_https;;
+        7) scanner_dhcp;;
+        8) scanner_cve;;
+        9) afficher_infos_wan;;
+        10) fin;;
+        *) echo "Choix invalide";;
+    esac
+done
+a
+
+
+
