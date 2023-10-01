@@ -1,0 +1,116 @@
+#!/bin/bash
+
+# Fonction pour trouver des fichiers
+find_files() {
+    clear
+    echo "Trouver des fichiers"
+    read -p "Entrez le nom ou le modèle de fichiers à rechercher : " search_pattern
+    found_files=$(find . -type f -name "$search_pattern")
+    echo "Fichiers trouvés :"
+    echo "$found_files"
+    echo "Nombre de fichiers trouvés : $(echo "$found_files" | wc -l)"
+    read -p "Appuyez sur Entrée pour continuer..."
+}
+
+# Fonction pour supprimer un répertoire avec confirmation
+delete_directory() {
+    clear
+    echo "Supprimer un répertoire"
+    read -p "Entrez le chemin absolu du répertoire à supprimer : " directory_path
+    if [ -d "$directory_path" ]; then
+        read -p "Êtes-vous sûr de vouloir supprimer le répertoire et son contenu ? (Oui/Non) : " confirm
+        if [ "$confirm" = "Oui" ]; then
+            rm -r "$directory_path"
+            echo "Répertoire $directory_path supprimé avec succès."
+        else
+            echo "Suppression annulée."
+        fi
+    else
+        echo "Le répertoire $directory_path n'existe pas."
+    fi
+    read -p "Appuyez sur Entrée pour continuer..."
+}
+
+# Fonction pour supprimer des fichiers avec confirmation
+delete_files() {
+    clear
+    echo "Supprimer des fichiers"
+    read -p "Entrez le nom ou le modèle de fichiers à supprimer : " delete_pattern
+    found_files=$(find . -type f -name "$delete_pattern")
+    if [ -n "$found_files" ]; then
+        echo "Fichiers trouvés :"
+        echo "$found_files"
+        read -p "Êtes-vous sûr de vouloir supprimer ces fichiers ? (Oui/Non) : " confirm
+        if [ "$confirm" = "Oui" ]; then
+            echo "$found_files" | xargs rm
+            echo "Fichiers supprimés avec succès."
+        else
+            echo "Suppression annulée."
+        fi
+    else
+        echo "Aucun fichier correspondant à '$delete_pattern' trouvé."
+    fi
+    read -p "Appuyez sur Entrée pour continuer..."
+}
+
+# Fonction pour copier des répertoires
+copy_directory() {
+    clear
+    echo "Copier des répertoires"
+    read -p "Entrez le chemin absolu du répertoire source : " source_directory
+    read -p "Entrez le chemin absolu du répertoire de destination : " destination_directory
+    if [ -d "$source_directory" ]; then
+        if [ -d "$destination_directory" ]; then
+            cp -r "$source_directory"/* "$destination_directory"
+            echo "Répertoire $source_directory copié avec succès dans $destination_directory."
+        else
+            echo "Le répertoire de destination $destination_directory n'existe pas."
+        fi
+    else
+        echo "Le répertoire source $source_directory n'existe pas."
+    fi
+    read -p "Appuyez sur Entrée pour continuer..."
+}
+
+# Fonction pour archiver des données
+archive_data() {
+    clear
+    echo "Archiver des données"
+    archive_filename="$(hostname)_$(date +'%Y%m%d').tar.gz"
+    tar -czvf "$archive_filename" .
+    echo "Archive créée : $archive_filename"
+    read -p "Appuyez sur Entrée pour continuer..."
+}
+
+# Boucle automatique pour le menu principal
+while true; do
+    clear
+    echo "Menu pour gérer les fichiers"
+    PS3="Choix: (1-Find FIC) (2- Del DIR) (3-Del FIC) (4-Copy DIR) (5-Save) (6-Quitter) "
+    options=("Trouver des fichiers" "Supprimer un répertoire" "Supprimer des fichiers" "Copier des répertoires" "Archiver des données" "Quitter")
+    select action in "${options[@]}"; do
+        case $action in
+            "Trouver des fichiers")
+                find_files
+                ;;
+            "Supprimer un répertoire")
+                delete_directory
+                ;;
+            "Supprimer des fichiers")
+                delete_files
+                ;;
+            "Copier des répertoires")
+                copy_directory
+                ;;
+            "Archiver des données")
+                archive_data
+                ;;
+            "Quitter")
+                exit 0
+                ;;
+            *)
+                echo "Choix invalide"
+                ;;
+        esac
+    done
+done
