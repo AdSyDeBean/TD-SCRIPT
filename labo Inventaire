@@ -1,0 +1,82 @@
+#!/bin/bash
+
+# Chemin du fichier de base de données
+database_file="/path/to/inventory.csv"
+
+# Vérifier si le fichier de base de données existe, le créer s'il n'existe pas
+if [ ! -e "$database_file" ]; then
+    touch "$database_file"
+fi
+
+# Fonction pour ajouter un élément à l'inventaire
+add_item() {
+    echo "Ajout d'un nouvel élément à l'inventaire :"
+
+    # Génération d'un ID automatique
+    id=$(($(tail -n 1 "$database_file" | cut -d ',' -f 1) + 1))
+
+    read -p "Nom du constructeur (HP, DELL) : " manufacturer
+    read -p "Adresse IP : " ip_address
+    read -p "Nom Host : " host_name
+    date_added=$(date +'%Y-%m-%d %H:%M:%S')
+
+    # Ajout des données à la base de données
+    echo "$id,$manufacturer,$ip_address,$host_name,$date_added" >> "$database_file"
+    echo "Élément ajouté avec succès."
+}
+
+# Fonction pour supprimer un élément de l'inventaire
+delete_item() {
+    echo "Suppression d'un élément de l'inventaire :"
+    read -p "Entrez l'ID ou le nom de l'objet à supprimer : " item_identifier
+
+    # Suppression de l'élément de la base de données
+    sed -i "/^$item_identifier,/d" "$database_file"
+    echo "Élément supprimé avec succès."
+}
+
+# Fonction pour voir l'inventaire complet
+view_inventory() {
+    echo "Inventaire complet :"
+    cat "$database_file"
+}
+
+# Fonction pour voir le nombre d'éléments dans l'inventaire
+count_items() {
+    num_items=$(wc -l < "$database_file")
+    echo "Nombre d'éléments dans l'inventaire : $num_items"
+}
+
+# Menu principal
+while true; do
+    echo
+    echo "Menu du script d'inventaire des serveurs :"
+    echo "a = Ajouter un élément"
+    echo "b = Supprimer un élément"
+    echo "c = Voir l'inventaire"
+    echo "d = Voir le nombre d'éléments"
+    echo "q = Quitter"
+    read -p "Choisissez une option : " choice
+
+    case $choice in
+        a)
+            add_item
+            ;;
+        b)
+            delete_item
+            ;;
+        c)
+            view_inventory
+            ;;
+        d)
+            count_items
+            ;;
+        q)
+            echo "Au revoir !"
+            exit 0
+            ;;
+        *)
+            echo "Option invalide. Veuillez choisir une option valide."
+            ;;
+    esac
+done
